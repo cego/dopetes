@@ -1,0 +1,7 @@
+POST http://localhost:2900/api/publish
+Content-Type: application/json
+
+{
+    "elasticsearch_host": "https://elastic-stage.cego.dk",
+    "elasticsearch_api_key": "ZmFUWXVKWUJSYUtqZm9uYUI5VHU6UlF0UHlvVzBqX21JWmpxaUFzem9lQQ=="
+}

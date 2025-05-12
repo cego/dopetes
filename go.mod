@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	github.com/cego/go-lib v1.1.2
 	github.com/docker/docker v28.1.1+incompatible
+	github.com/elastic/go-elasticsearch/v9 v9.0.0
 	github.com/ory/graceful v0.1.3
 	github.com/spf13/cobra v1.9.1
 )
@@ -16,6 +17,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/elastic/elastic-transport-go/v8 v8.7.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

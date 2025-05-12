@@ -2,15 +2,15 @@ package routines
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/cego/dopetes/model"
+	"github.com/cego/go-lib"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 )
 
-func StartDockerEventListener(ctx context.Context, m *model.Model, d *client.Client) {
+func StartDockerEventsRoutine(ctx context.Context, m *model.Model, d *client.Client, logger cego.Logger) {
 	go func() {
 		messageChan, errChan := d.Events(ctx, events.ListOptions{
 			Filters: filters.NewArgs(
@@ -22,13 +22,14 @@ func StartDockerEventListener(ctx context.Context, m *model.Model, d *client.Cli
 		for {
 			select {
 			case message := <-messageChan:
-				if message.Action == events.ActionPull {
+				switch message.Action {
+				case events.ActionPull:
 					m.AddDockerPullEvent(message.Actor.ID)
-				} else if message.Action == events.ActionCreate {
+				case events.ActionCreate:
 					m.AddDockerPullEvent(message.Actor.Attributes["image"])
 				}
 			case err := <-errChan:
-				fmt.Println(err)
+				logger.Error(err.Error())
 			default:
 				ctx.Done()
 			}
