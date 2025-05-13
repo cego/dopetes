@@ -3,10 +3,12 @@ module github.com/cego/dopetes
 go 1.24.2
 
 require (
+	dario.cat/mergo v1.0.2
 	github.com/cego/go-lib v1.1.2
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/elastic/go-elasticsearch/v9 v9.0.0
 	github.com/spf13/cobra v1.9.1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -41,6 +43,5 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 )

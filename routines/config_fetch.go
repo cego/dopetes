@@ -2,33 +2,41 @@ package routines
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
+	"gopkg.in/yaml.v3"
 	"net/http"
 
+	"dario.cat/mergo"
 	"github.com/cego/dopetes/model"
 	"github.com/cego/go-lib"
 )
 
-func FetchConfig(ctx context.Context, m *model.Model, logger cego.Logger, httpClient *http.Client, configEndpoint string) {
+func FetchConfig(ctx context.Context, l cego.Logger, configEndpoint string) (*model.DopetesConfig, error) {
+	httpClient := &http.Client{}
 	req, err := http.NewRequestWithContext(ctx, "GET", configEndpoint, nil)
 	if err != nil {
-		logger.Error(err.Error())
-		return
+		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		logger.Error(err.Error())
-		return
+		return nil, fmt.Errorf("error fetching config: %s", err)
 	}
+	defer resp.Body.Close()
 
-	data := &model.DopetesConfig{}
-	err = json.NewDecoder(resp.Body).Decode(&data)
+	data := model.DopetesConfig{}
+	err = yaml.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		logger.Error(err.Error())
-		return
+		return nil, fmt.Errorf("could not decode response body: %w", err)
 	}
 
-	logger.Debug("Fetched config successfully")
-	m.SetElasticsearchConfig(data.Elasticsearch)
+	defaultConfig := model.New()
+	err = mergo.Merge(&data, *defaultConfig, mergo.WithOverride)
+	if err != nil {
+		return nil, fmt.Errorf("could not merge config: %w", err)
+	}
+
+	l.Debug("Fetched config successfully")
+
+	return &data, nil
 }

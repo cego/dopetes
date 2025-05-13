@@ -7,26 +7,24 @@ type DockerPullEvent struct {
 }
 
 type DopetesConfig struct {
-	Elasticsearch ElasticSearchConfig `json:"elasticsearch"`
+	Elasticsearch *ElasticSearchConfig `yaml:"elasticsearch"`
 }
 
 type ElasticSearchConfig struct {
-	Hosts    []string `json:"hosts"`
-	Username string   `json:"username,omitempty"`
-	Password string   `json:"password,omitempty"`
-	ApiKey   string   `json:"api_key,omitempty"`
-	Index    string   `json:"index,omitempty"`
+	Hosts    []string `yaml:"hosts"`
+	Username string   `yaml:"username,omitempty"`
+	Password string   `yaml:"password,omitempty"`
+	ApiKey   string   `yaml:"api_key,omitempty"`
+	Index    string   `yaml:"index,omitempty"`
 }
 
 type Model struct {
-	dockerPullEvents    []*DockerPullEvent
 	elasticSearchConfig ElasticSearchConfig
 }
 
-func New() *Model {
-	return &Model{
-		dockerPullEvents: []*DockerPullEvent{},
-		elasticSearchConfig: ElasticSearchConfig{
+func New() *DopetesConfig {
+	return &DopetesConfig{
+		Elasticsearch: &ElasticSearchConfig{
 			Hosts:    []string{"http://localhost:9200"},
 			Username: "",
 			Password: "",

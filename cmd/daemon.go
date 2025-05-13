@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"net/http"
 	"os"
 
 	"github.com/cego/dopetes/model"
@@ -12,28 +11,34 @@ import (
 )
 
 func DaemonRun(cmd *cobra.Command, _ []string) {
-	logger := cego.NewLogger()
-	m := model.New()
+	l := cego.NewLogger()
+	ctx := cmd.Context()
+	dockerEvents := make(chan *model.DockerPullEvent, 50)
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		logger.Error(err.Error())
+		l.Error(err.Error())
 		os.Exit(1)
 	}
 
 	configEndpoint, err := cmd.Flags().GetString("config-endpoint")
 	if err != nil {
-		logger.Error(err.Error())
+		l.Error(err.Error())
 		os.Exit(1)
 	}
 
-	ctx := cmd.Context()
-	httpClient := &http.Client{}
+	go routines.StartDockerEventsChannel(ctx, dockerClient, l, dockerEvents)
 
-	routines.StartDockerEventsChannel(ctx, m, dockerClient, logger)
-	routines.FetchConfig(ctx, m, logger, httpClient, configEndpoint)
+	config, err := routines.FetchConfig(ctx, l, configEndpoint)
+	if err != nil {
+		l.Error(err.Error())
+		os.Exit(1)
+	}
 
-	<-cmd.Context().Done()
+	err = routines.PushDockerEventsToElastic(ctx, l, config, dockerEvents)
+	if err != nil {
+		l.Error(err.Error())
+	}
 }
 
 func InitDaemon() *cobra.Command {
