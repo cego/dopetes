@@ -3,8 +3,9 @@ package routines
 import (
 	"context"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"net/http"
+
+	"gopkg.in/yaml.v3"
 
 	"dario.cat/mergo"
 	"github.com/cego/dopetes/model"
@@ -22,7 +23,6 @@ func FetchConfig(ctx context.Context, l cego.Logger, configEndpoint string) (*mo
 	if err != nil {
 		return nil, fmt.Errorf("error fetching config: %s", err)
 	}
-	defer resp.Body.Close()
 
 	data := model.DopetesConfig{}
 	err = yaml.NewDecoder(resp.Body).Decode(&data)

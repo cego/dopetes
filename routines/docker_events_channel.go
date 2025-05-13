@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v9"
 	"strings"
 	"time"
+
+	"github.com/elastic/go-elasticsearch/v9"
 
 	"github.com/cego/dopetes/model"
 	"github.com/cego/go-lib"
@@ -41,7 +42,7 @@ func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model
 				l.Error(fmt.Sprintf("Failed to sent event to elasticsearch: %v", err))
 				continue
 			}
-		case _ = <-ctx.Done():
+		case <-ctx.Done():
 			return nil
 		}
 	}
