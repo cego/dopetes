@@ -19,13 +19,11 @@ type ElasticSearchConfig struct {
 }
 
 type Model struct {
-	dockerPullEvents    []*DockerPullEvent
 	elasticSearchConfig ElasticSearchConfig
 }
 
 func New() *Model {
 	return &Model{
-		dockerPullEvents: []*DockerPullEvent{},
 		elasticSearchConfig: ElasticSearchConfig{
 			Hosts:    []string{"http://localhost:9200"},
 			Username: "",
