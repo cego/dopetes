@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log/slog"
+	"os"
 
 	"github.com/cego/dopetes/model"
 	"github.com/cego/dopetes/routines"
@@ -10,23 +10,44 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func DaemonRun(cmd *cobra.Command, args []string) {
-	elasticsearchBulkUrl, _ := cmd.Flags().GetString("elasticsearch-bulk-url")
-	m := model.New()
-	r := cego.NewRenderer(slog.Default())
+func DaemonRun(cmd *cobra.Command, _ []string) {
+	l := cego.NewLogger()
+	ctx := cmd.Context()
+	dockerEvents := make(chan *model.DockerPullEvent, 50)
 
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		panic(err)
+		l.Error(err.Error())
+		os.Exit(1)
 	}
 
-	routines.StartDockerEventListener(cmd.Context(), m, cli)
-	routines.StartRestApi(cmd.Context(), m, 2900, r, elasticsearchBulkUrl)
+	configEndpoint, err := cmd.Flags().GetString("config-endpoint")
+	if err != nil {
+		l.Error(err.Error())
+		os.Exit(1)
+	}
+
+	go routines.StartDockerEventsChannel(ctx, dockerClient, l, dockerEvents)
+
+	config, err := routines.FetchConfig(ctx, l, configEndpoint)
+	if err != nil {
+		l.Error(err.Error())
+		os.Exit(1)
+	}
+
+	err = routines.PushDockerEventsToElastic(ctx, l, config, dockerEvents)
+	if err != nil {
+		l.Error(err.Error())
+	}
 }
 
-var daemon = &cobra.Command{
-	Use:   "daemon",
-	Short: "Start daemon",
-	Long:  `Starts daemon that stores docker pull events and a rest api`,
-	Run:   DaemonRun,
+func InitDaemon() *cobra.Command {
+	var daemon = &cobra.Command{
+		Use:   "daemon",
+		Short: "Starts daemon that stores docker pull events and hosts a rest api",
+		Run:   DaemonRun,
+	}
+
+	daemon.Flags().String("config-endpoint", "http://localhost:8080/dopetes.yaml", "Endpoint to fetch config from")
+	return daemon
 }
