@@ -6,7 +6,6 @@ require (
 	github.com/cego/go-lib v1.1.2
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/elastic/go-elasticsearch/v9 v9.0.0
-	github.com/ory/graceful v0.1.3
 	github.com/spf13/cobra v1.9.1
 )
 
