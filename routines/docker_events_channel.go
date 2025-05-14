@@ -64,6 +64,9 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 			switch message.Action {
 			case events.ActionPull:
 				imageName := message.Actor.ID
+				if imageName == "" {
+					continue
+				}
 				dockerPullEvent := &model.DockerPullEvent{
 					Timestamp: time.Now().Format(time.RFC3339),
 					Message:   "dopetes detected docker pull event for " + imageName,
@@ -72,6 +75,9 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 				dockerEvents <- dockerPullEvent
 			case events.ActionCreate:
 				imageName := message.Actor.Attributes["image"]
+				if imageName == "" {
+					continue
+				}
 				if !strings.Contains(imageName, ":") {
 					imageName = imageName + ":latest"
 				}
