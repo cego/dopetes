@@ -3,7 +3,6 @@ module github.com/cego/dopetes
 go 1.24.2
 
 require (
-	dario.cat/mergo v1.0.2
 	github.com/cego/go-lib v1.1.2
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/elastic/go-elasticsearch/v9 v9.0.0

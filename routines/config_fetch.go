@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"dario.cat/mergo"
 	"github.com/cego/dopetes/model"
 	"github.com/cego/go-lib"
 )
@@ -24,19 +23,13 @@ func FetchConfig(ctx context.Context, l cego.Logger, configEndpoint string) (*mo
 		return nil, fmt.Errorf("error fetching config: %s", err)
 	}
 
-	data := model.DopetesConfig{}
-	err = yaml.NewDecoder(resp.Body).Decode(&data)
+	data := &model.DopetesConfig{}
+	err = yaml.NewDecoder(resp.Body).Decode(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode response body: %w", err)
 	}
 
-	defaultConfig := model.New()
-	err = mergo.Merge(&data, *defaultConfig, mergo.WithOverride)
-	if err != nil {
-		return nil, fmt.Errorf("could not merge config: %w", err)
-	}
-
 	l.Debug("Fetched config successfully")
 
-	return &data, nil
+	return data, nil
 }
