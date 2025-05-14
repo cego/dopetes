@@ -83,7 +83,7 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 				}
 				dockerPullEvent := &model.DockerPullEvent{
 					Timestamp: time.Now().Format(time.RFC3339),
-					Message:   "dopetes detected docker pull event for " + imageName,
+					Message:   "dopetes detected docker create event for " + imageName,
 					ImageName: imageName,
 				}
 				dockerEvents <- dockerPullEvent
