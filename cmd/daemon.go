@@ -48,6 +48,6 @@ func InitDaemon() *cobra.Command {
 		Run:   DaemonRun,
 	}
 
-	daemon.Flags().String("config-endpoint", "http://localhost:8080/dopetes.yaml", "Endpoint to fetch config from")
+	daemon.Flags().String("config-endpoint", "http://localhost:8000/dopetes.yaml", "Endpoint to fetch config from")
 	return daemon
 }
