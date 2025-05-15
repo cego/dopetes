@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v9"
@@ -65,33 +63,22 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 			switch message.Action {
 			case events.ActionPull:
 				res, _ := json.Marshal(message)
-				logger.Debug("", slog.String("dopetes.event.raw", string(res)))
-
 				imageName := message.Actor.ID
-				if imageName == "" {
-					continue
-				}
 				dockerPullEvent := &model.DockerPullEvent{
 					Timestamp: time.Now().Format(time.RFC3339),
 					Message:   "dopetes detected docker pull event for " + imageName,
 					ImageName: imageName,
+					EventRaw:  string(res),
 				}
 				dockerEvents <- dockerPullEvent
 			case events.ActionCreate:
 				res, _ := json.Marshal(message)
-				logger.Debug("", slog.String("dopetes.event.raw", string(res)))
-
 				imageName := message.Actor.Attributes["image"]
-				if imageName == "" {
-					continue
-				}
-				if !strings.Contains(imageName, ":") {
-					imageName = imageName + ":latest"
-				}
 				dockerPullEvent := &model.DockerPullEvent{
 					Timestamp: time.Now().Format(time.RFC3339),
 					Message:   "dopetes detected docker create event for " + imageName,
 					ImageName: imageName,
+					EventRaw:  string(res),
 				}
 				dockerEvents <- dockerPullEvent
 			}

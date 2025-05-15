@@ -4,6 +4,7 @@ type DockerPullEvent struct {
 	Timestamp string `json:"@timestamp"`
 	Message   string `json:"message"`
 	ImageName string `json:"dopetes.image_name"`
+	EventRaw  string `json:"dopetes.event.raw"`
 }
 
 type DopetesConfig struct {
