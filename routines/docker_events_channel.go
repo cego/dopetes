@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -63,6 +64,9 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 		case message := <-messageChan:
 			switch message.Action {
 			case events.ActionPull:
+				res, _ := json.Marshal(message)
+				logger.Debug("", slog.String("dopetes.event.raw", string(res)))
+
 				imageName := message.Actor.ID
 				if imageName == "" {
 					continue
@@ -74,6 +78,9 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 				}
 				dockerEvents <- dockerPullEvent
 			case events.ActionCreate:
+				res, _ := json.Marshal(message)
+				logger.Debug("", slog.String("dopetes.event.raw", string(res)))
+
 				imageName := message.Actor.Attributes["image"]
 				if imageName == "" {
 					continue
