@@ -1,6 +1,18 @@
 package model
 
-type DockerPullEvent struct {
+type DockerBuildxHistoryLs struct {
+	CreatedAt string `json:"created_at"`
+	Ref       string `json:"ref"`
+}
+
+type DockerBuildxHistoryInspect struct {
+	Materials []struct {
+		URI     string   `json:"URI"`
+		Digests []string `json:"Digests"`
+	} `json:"Materials"`
+}
+
+type ElasticDocument struct {
 	Timestamp string `json:"@timestamp"`
 	Message   string `json:"message"`
 	ImageName string `json:"dopetes.image_name"`

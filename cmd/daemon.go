@@ -11,33 +11,41 @@ import (
 )
 
 func DaemonRun(cmd *cobra.Command, _ []string) {
-	l := cego.NewLogger()
+	logger := cego.NewLogger()
 	ctx := cmd.Context()
-	dockerEvents := make(chan *model.DockerPullEvent, 50)
+	elasticDocumentChan := make(chan *model.ElasticDocument, 50)
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		l.Error(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 
 	configEndpoint, err := cmd.Flags().GetString("config-endpoint")
 	if err != nil {
-		l.Error(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 
-	go routines.StartDockerEventsChannel(ctx, dockerClient, l, dockerEvents)
+	go routines.StartDockerEventsChannel(ctx, dockerClient, logger, elasticDocumentChan)
 
-	config, err := routines.FetchConfig(ctx, l, configEndpoint)
+	config, err := routines.FetchConfig(ctx, logger, configEndpoint)
 	if err != nil {
-		l.Error(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 
-	err = routines.PushDockerEventsToElastic(ctx, l, config, dockerEvents)
+	err = routines.PushDockerEventsToElastic(ctx, logger, config, elasticDocumentChan)
 	if err != nil {
-		l.Error(err.Error())
+		logger.Error(err.Error())
+	}
+
+	<-cmd.Context().Done()
+
+	err = routines.PushDockerBuildxHistoryToElastic(config)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 }
 

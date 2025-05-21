@@ -13,6 +13,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	logger := cego.NewLogger()
 	rootCmd.AddCommand(InitDaemon())
+	rootCmd.AddCommand(InitTest())
 	err := rootCmd.Execute()
 	if err != nil {
 		logger.Error(err.Error())

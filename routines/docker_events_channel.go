@@ -17,7 +17,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
-func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model.DopetesConfig, events chan *model.DockerPullEvent) error {
+func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model.DopetesConfig, elasticDocumentChan chan *model.ElasticDocument) error {
 	if config == nil || config.Elasticsearch == nil {
 		return fmt.Errorf("missing elasticsearch config")
 	}
@@ -33,7 +33,7 @@ func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model
 
 	for {
 		select {
-		case e := <-events:
+		case e := <-elasticDocumentChan:
 			l.Debug(fmt.Sprintf("Detected docker pull event for %s pushing to %s for index %s", e.ImageName, config.Elasticsearch.Hosts, config.Elasticsearch.Index))
 
 			data, _ := json.Marshal(e)
@@ -48,7 +48,7 @@ func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model
 	}
 }
 
-func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego.Logger, dockerEvents chan *model.DockerPullEvent) {
+func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego.Logger, elasticDocumentChan chan *model.ElasticDocument) {
 	messageChan, errChan := d.Events(ctx, events.ListOptions{
 		Filters: filters.NewArgs(
 			filters.Arg("event", string(events.ActionPull)),
@@ -65,13 +65,13 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 			case events.ActionPull:
 				res, _ := json.Marshal(message)
 				imageName := message.Actor.ID
-				dockerPullEvent := &model.DockerPullEvent{
+				dockerPullEvent := &model.ElasticDocument{
 					Timestamp: time.Now().Format(time.RFC3339),
 					Message:   "dopetes detected docker pull event for " + imageName,
 					ImageName: imageName,
 					EventRaw:  string(res),
 				}
-				dockerEvents <- dockerPullEvent
+				elasticDocumentChan <- dockerPullEvent
 			case events.ActionCreate:
 				if message.Type != events.ContainerEventType {
 					continue
@@ -81,13 +81,13 @@ func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego
 					imageName = imageName + ":latest"
 				}
 				res, _ := json.Marshal(message)
-				dockerPullEvent := &model.DockerPullEvent{
+				dockerPullEvent := &model.ElasticDocument{
 					Timestamp: time.Now().Format(time.RFC3339),
 					Message:   fmt.Sprintf("dopetes detected docker create event of type %s for %s", message.Type, imageName),
 					ImageName: imageName,
 					EventRaw:  string(res),
 				}
-				dockerEvents <- dockerPullEvent
+				elasticDocumentChan <- dockerPullEvent
 			}
 		case err := <-errChan:
 			logger.Error(err.Error())
