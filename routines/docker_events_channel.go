@@ -77,6 +77,9 @@ func StartDockerEventsChannel(ctx context.Context, dockerClient *client.Client, 
 					continue
 				}
 				imageName := message.Actor.Attributes["image"]
+				if strings.HasPrefix(imageName, "sha256:") {
+					continue
+				}
 				if !strings.Contains(imageName, ":") {
 					imageName = imageName + ":latest"
 				}
