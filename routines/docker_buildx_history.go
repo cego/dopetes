@@ -66,6 +66,9 @@ func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesC
 		for _, material := range dockerBuildxHistoryInspect.Materials {
 			matches = reMaterialUri.FindStringSubmatch(material.URI)
 			imageRef := strings.ReplaceAll(matches[1], "@", ":")
+
+			logger.Debug(fmt.Sprintf("Detected docker buildx history material %s", imageRef))
+
 			document := &model.ElasticDocument{
 				Timestamp: time.Now().Format(time.RFC3339),
 				Message:   fmt.Sprintf("dopetes detected docker buildx history inspect material URI  %s", imageRef),
