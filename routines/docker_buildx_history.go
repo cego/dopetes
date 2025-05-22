@@ -10,25 +10,12 @@ import (
 	"time"
 
 	"github.com/cego/dopetes/model"
-	cego "github.com/cego/go-lib"
+	"github.com/cego/go-lib"
 	"github.com/elastic/go-elasticsearch/v9"
 )
 
-func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesConfig) error {
-	if config == nil || config.Elasticsearch == nil {
-		return fmt.Errorf("missing elasticsearch config")
-	}
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: config.Elasticsearch.Hosts,
-		APIKey:    config.Elasticsearch.ApiKey,
-		Username:  config.Elasticsearch.Username,
-		Password:  config.Elasticsearch.Password,
-	})
-	if err != nil {
-		return fmt.Errorf("error creating elasticsearch client: %w", err)
-	}
-
-	out, err := exec.Command("docker", "buildx", "history", "ls", "--format=json").Output()
+func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesConfig, elasticClient *elasticsearch.Client, state *model.DockerBuildxHistoryState) error {
+	out, err := exec.Command("docker", "buildx", "history", "ls", "--format=json", "--filter=status!=running").Output()
 	if err != nil {
 		return err
 	}
@@ -51,6 +38,12 @@ func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesC
 
 		matches := reHistoryLsId.FindStringSubmatch(dockerBuildxHistoryLs.Ref)
 		id := matches[1]
+
+		if state.HasId(id) {
+			continue
+		}
+
+		state.AddId(id)
 
 		out, err = exec.Command("docker", "buildx", "history", "inspect", id, "--format=json").Output()
 		if err != nil {
@@ -76,7 +69,7 @@ func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesC
 				EventRaw:  string(out),
 			}
 			data, _ := json.Marshal(document)
-			_, err = es.Index(config.Elasticsearch.Index, bytes.NewReader(data))
+			_, err = elasticClient.Index(config.Elasticsearch.Index, bytes.NewReader(data))
 			if err != nil {
 				logger.Error(err.Error())
 				continue
@@ -86,4 +79,16 @@ func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesC
 	}
 
 	return nil
+}
+
+func StartDockerBuildxHistoryInterval(logger cego.Logger, config *model.DopetesConfig, elasticClient *elasticsearch.Client, state *model.DockerBuildxHistoryState) {
+	go func() {
+		for {
+			err := PushDockerBuildxHistoryToElastic(logger, config, elasticClient, state)
+			if err != nil {
+				logger.Error(err.Error())
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
 }

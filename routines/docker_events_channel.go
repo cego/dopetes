@@ -8,42 +8,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v9"
-
 	"github.com/cego/dopetes/model"
 	"github.com/cego/go-lib"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/elastic/go-elasticsearch/v9"
 )
 
-func PushDockerEventsToElastic(ctx context.Context, logger cego.Logger, config *model.DopetesConfig, elasticDocumentChan chan *model.ElasticDocument) error {
-	if config == nil || config.Elasticsearch == nil {
-		return fmt.Errorf("missing elasticsearch config")
-	}
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: config.Elasticsearch.Hosts,
-		APIKey:    config.Elasticsearch.ApiKey,
-		Username:  config.Elasticsearch.Username,
-		Password:  config.Elasticsearch.Password,
-	})
-	if err != nil {
-		return fmt.Errorf("error creating elasticsearch client: %w", err)
-	}
-
+func PushDockerEventsToElastic(ctx context.Context, logger cego.Logger, config *model.DopetesConfig, elasticClient *elasticsearch.Client, elasticDocumentChan chan *model.ElasticDocument) {
 	for {
 		select {
 		case e := <-elasticDocumentChan:
 			logger.Debug(fmt.Sprintf("Detected docker pull event for %s pushing to %s for index %s", e.ImageName, config.Elasticsearch.Hosts, config.Elasticsearch.Index))
 
 			data, _ := json.Marshal(e)
-			_, err = es.Index(config.Elasticsearch.Index, bytes.NewReader(data))
+			_, err := elasticClient.Index(config.Elasticsearch.Index, bytes.NewReader(data))
 			if err != nil {
 				logger.Error(fmt.Sprintf("Failed to sent event to elasticsearch: %v", err))
 				continue
 			}
 		case <-ctx.Done():
-			return nil
 		}
 	}
 }

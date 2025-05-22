@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/cego/dopetes/model"
 	"github.com/cego/dopetes/routines"
 	"github.com/cego/go-lib"
 	"github.com/docker/docker/client"
+	"github.com/elastic/go-elasticsearch/v9"
 	"github.com/spf13/cobra"
 )
 
@@ -35,18 +37,30 @@ func DaemonRun(cmd *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
-	err = routines.PushDockerEventsToElastic(ctx, logger, config, elasticDocumentChan)
-	if err != nil {
-		logger.Error(err.Error())
-	}
-
-	<-cmd.Context().Done()
-
-	err = routines.PushDockerBuildxHistoryToElastic(logger, config)
+	elasticClient, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: config.Elasticsearch.Hosts,
+		APIKey:    config.Elasticsearch.ApiKey,
+		Username:  config.Elasticsearch.Username,
+		Password:  config.Elasticsearch.Password,
+	})
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
+
+	go routines.PushDockerEventsToElastic(ctx, logger, config, elasticClient, elasticDocumentChan)
+
+	dockerBuildxHistoryState := model.NewDockerBuildxHistoryState()
+	routines.StartDockerBuildxHistoryInterval(logger, config, elasticClient, dockerBuildxHistoryState)
+
+	<-cmd.Context().Done()
+
+	err = routines.PushDockerBuildxHistoryToElastic(logger, config, elasticClient, dockerBuildxHistoryState)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("I made it")
 }
 
 func InitDaemon() *cobra.Command {
