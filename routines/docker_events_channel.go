@@ -17,7 +17,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
-func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model.DopetesConfig, elasticDocumentChan chan *model.ElasticDocument) error {
+func PushDockerEventsToElastic(ctx context.Context, logger cego.Logger, config *model.DopetesConfig, elasticDocumentChan chan *model.ElasticDocument) error {
 	if config == nil || config.Elasticsearch == nil {
 		return fmt.Errorf("missing elasticsearch config")
 	}
@@ -34,12 +34,12 @@ func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model
 	for {
 		select {
 		case e := <-elasticDocumentChan:
-			l.Debug(fmt.Sprintf("Detected docker pull event for %s pushing to %s for index %s", e.ImageName, config.Elasticsearch.Hosts, config.Elasticsearch.Index))
+			logger.Debug(fmt.Sprintf("Detected docker pull event for %s pushing to %s for index %s", e.ImageName, config.Elasticsearch.Hosts, config.Elasticsearch.Index))
 
 			data, _ := json.Marshal(e)
 			_, err = es.Index(config.Elasticsearch.Index, bytes.NewReader(data))
 			if err != nil {
-				l.Error(fmt.Sprintf("Failed to sent event to elasticsearch: %v", err))
+				logger.Error(fmt.Sprintf("Failed to sent event to elasticsearch: %v", err))
 				continue
 			}
 		case <-ctx.Done():
@@ -48,8 +48,8 @@ func PushDockerEventsToElastic(ctx context.Context, l cego.Logger, config *model
 	}
 }
 
-func StartDockerEventsChannel(ctx context.Context, d *client.Client, logger cego.Logger, elasticDocumentChan chan *model.ElasticDocument) {
-	messageChan, errChan := d.Events(ctx, events.ListOptions{
+func StartDockerEventsChannel(ctx context.Context, dockerClient *client.Client, logger cego.Logger, elasticDocumentChan chan *model.ElasticDocument) {
+	messageChan, errChan := dockerClient.Events(ctx, events.ListOptions{
 		Filters: filters.NewArgs(
 			filters.Arg("event", string(events.ActionPull)),
 			filters.Arg("event", string(events.ActionCreate)),

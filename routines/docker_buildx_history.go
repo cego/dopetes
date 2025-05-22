@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/cego/dopetes/model"
+	cego "github.com/cego/go-lib"
 	"github.com/elastic/go-elasticsearch/v9"
 )
 
-func PushDockerBuildxHistoryToElastic(config *model.DopetesConfig) error {
+func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesConfig) error {
 	if config == nil || config.Elasticsearch == nil {
 		return fmt.Errorf("missing elasticsearch config")
 	}
@@ -34,7 +35,7 @@ func PushDockerBuildxHistoryToElastic(config *model.DopetesConfig) error {
 
 	split := strings.Split(string(out), "\n")
 
-	reMaterialUri := regexp.MustCompile("pkg:docker/(.*)\\?")
+	reMaterialUri := regexp.MustCompile(`pkg:docker/(.*)\?`)
 
 	reHistoryLsId := regexp.MustCompile(".*/(.*)$")
 
@@ -64,7 +65,7 @@ func PushDockerBuildxHistoryToElastic(config *model.DopetesConfig) error {
 
 		for _, material := range dockerBuildxHistoryInspect.Materials {
 			matches = reMaterialUri.FindStringSubmatch(material.URI)
-			imageRef := strings.Replace(matches[1], "@", ":", -1)
+			imageRef := strings.ReplaceAll(matches[1], "@", ":")
 			document := &model.ElasticDocument{
 				Timestamp: time.Now().Format(time.RFC3339),
 				Message:   fmt.Sprintf("dopetes detected docker buildx history inspect material URI  %s", imageRef),
@@ -73,6 +74,10 @@ func PushDockerBuildxHistoryToElastic(config *model.DopetesConfig) error {
 			}
 			data, _ := json.Marshal(document)
 			_, err = es.Index(config.Elasticsearch.Index, bytes.NewReader(data))
+			if err != nil {
+				logger.Error(err.Error())
+				continue
+			}
 		}
 
 	}

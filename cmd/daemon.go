@@ -42,7 +42,7 @@ func DaemonRun(cmd *cobra.Command, _ []string) {
 
 	<-cmd.Context().Done()
 
-	err = routines.PushDockerBuildxHistoryToElastic(config)
+	err = routines.PushDockerBuildxHistoryToElastic(logger, config)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
