@@ -11,7 +11,7 @@ import (
 	"github.com/cego/go-lib"
 )
 
-func FetchConfig(ctx context.Context, l cego.Logger, configEndpoint string) (*model.DopetesConfig, error) {
+func FetchConfig(ctx context.Context, logger cego.Logger, configEndpoint string) (*model.DopetesConfig, error) {
 	httpClient := &http.Client{}
 	req, err := http.NewRequestWithContext(ctx, "GET", configEndpoint, nil)
 	if err != nil {
@@ -29,7 +29,7 @@ func FetchConfig(ctx context.Context, l cego.Logger, configEndpoint string) (*mo
 		return nil, fmt.Errorf("could not decode response body: %w", err)
 	}
 
-	l.Debug("Fetched config successfully")
+	logger.Debug("Fetched config successfully")
 
 	return data, nil
 }

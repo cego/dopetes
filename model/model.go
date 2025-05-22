@@ -1,6 +1,41 @@
 package model
 
-type DockerPullEvent struct {
+import (
+	"slices"
+)
+
+type DockerBuildxHistoryLs struct {
+	CreatedAt string `json:"created_at"`
+	Ref       string `json:"ref"`
+}
+
+type DockerBuildxHistoryInspect struct {
+	Materials []struct {
+		URI     string   `json:"URI"`
+		Digests []string `json:"Digests"`
+	} `json:"Materials"`
+}
+
+type DockerBuildxHistoryState struct {
+	ids []string
+}
+
+func (r *DockerBuildxHistoryState) AddId(id string) {
+	r.ids = append(r.ids, id)
+}
+
+func (r *DockerBuildxHistoryState) HasId(id string) bool {
+	idx := slices.IndexFunc(r.ids, func(c string) bool { return c == id })
+	return idx != -1
+}
+
+func NewDockerBuildxHistoryState() *DockerBuildxHistoryState {
+	return &DockerBuildxHistoryState{
+		ids: []string{},
+	}
+}
+
+type ElasticDocument struct {
 	Timestamp string `json:"@timestamp"`
 	Message   string `json:"message"`
 	ImageName string `json:"dopetes.image_name"`
