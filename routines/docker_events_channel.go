@@ -54,6 +54,7 @@ func StartDockerEventsChannel(ctx context.Context, dockerClient *client.Client, 
 					Timestamp: time.Now().Format(time.RFC3339),
 					Message:   "dopetes detected docker pull event for " + imageName,
 					ImageName: imageName,
+					Type:      "event",
 					EventRaw:  string(res),
 				}
 				elasticDocumentChan <- dockerPullEvent
@@ -73,6 +74,7 @@ func StartDockerEventsChannel(ctx context.Context, dockerClient *client.Client, 
 					Timestamp: time.Now().Format(time.RFC3339),
 					Message:   fmt.Sprintf("dopetes detected docker create event of type %s for %s", message.Type, imageName),
 					ImageName: imageName,
+					Type:      "event",
 					EventRaw:  string(res),
 				}
 				elasticDocumentChan <- dockerPullEvent

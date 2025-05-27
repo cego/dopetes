@@ -39,6 +39,7 @@ type ElasticDocument struct {
 	Timestamp string `json:"@timestamp"`
 	Message   string `json:"message"`
 	ImageName string `json:"dopetes.image_name"`
+	Type      string `json:"dopetes.type"`
 	EventRaw  string `json:"dopetes.event.raw"`
 }
 

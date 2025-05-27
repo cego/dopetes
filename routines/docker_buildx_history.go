@@ -66,6 +66,7 @@ func PushDockerBuildxHistoryToElastic(logger cego.Logger, config *model.DopetesC
 				Timestamp: time.Now().Format(time.RFC3339),
 				Message:   fmt.Sprintf("dopetes detected docker buildx history inspect material URI  %s", imageRef),
 				ImageName: imageRef,
+				Type:      "buildx",
 				EventRaw:  string(out),
 			}
 			data, _ := json.Marshal(document)
